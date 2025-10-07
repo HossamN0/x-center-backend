@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('instructor_id')->constrained('users')->onDelete('restrict');
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->float('price');
             $table->string('title');
             $table->string('subtitle');
             $table->text('description');
