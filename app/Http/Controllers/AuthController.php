@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +19,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'phone' => 'required',
             'password' => 'required',
-            'role' => ['optional', Rule::in(['admin', 'instructor', 'student'])],
+            'role' => ['sometimes', Rule::in(['admin', 'instructor', 'student'])],
         ]);
 
         $role = $validated['role'] ?? 'student';
@@ -29,9 +30,8 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'phone' => $validated['phone'],
             'password' => Hash::make($validated['password']),
-            'role' => $role,
             'status' => $role === 'instructor' ? 'inactive' : 'active',
-        ]);
+        ])->roles()->sync(Role::where('name', $role)->first());
 
         return response()->json([
             'message' => 'User registered successfully'

@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
             $table->string('title');
             $table->string('content');
+            $table->enum('status', ['opened', 'closed'])->default('opened');
             $table->timestamps();
         });
     }

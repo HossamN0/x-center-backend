@@ -17,6 +17,8 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $this->createAdminRole();
+        $this->createInstructorRole();
+        $this->createStudentRole();
     }
 
     protected function createRole(RoleName $role, Collection $permissions): void
@@ -27,11 +29,59 @@ class RoleSeeder extends Seeder
 
     protected function createAdminRole(): void
     {
-        $permissions = Permission::query()
-            ->where('name', 'like', 'user.%')
-            ->orWhere('name', 'like', 'course.%')
+        $permission = Permission::all()->pluck('id');
+        $this->createRole(RoleName::ADMIN, $permission);
+    }
+
+    protected function createInstructorRole(): void
+    {
+        $permission = Permission::query()
+            ->where(function ($query) {
+                $query->where('name', 'like', 'course.%')
+                    ->orWhere('name', 'like', 'course_chapter.%')
+                    ->orWhere('name', 'like', 'course_exam.%')
+                    ->orWhere('name', 'like', 'exam_question.%')
+                    ->orWhere('name', 'like', 'book.%');
+            })
+            ->orWhere(function ($query) {
+                $query->whereIn('name', [
+                    'course_review.view',
+                    'book_review.view'
+                ]);
+            })
+            ->whereNotIn('name', [
+                'course.delete',
+                'course_chapter.delete',
+                'course_exam.delete',
+                'exam_question.delete',
+                'book.delete'
+            ])
             ->pluck('id');
 
-        $this->createRole(RoleName::ADMIN, $permissions);
+        $this->createRole(RoleName::INSTRUCTOR, $permission);
+    }
+
+    public function createStudentRole(): void
+    {
+        $permission = Permission::query()
+            ->whereIn('name', [
+                'course.viewAny',
+                'course.view',
+                'course.enroll',
+                'course_chapter.view',
+                'course_exam.view',
+                'exam_question.view',
+                'exam_answer.create',
+                'exam_answer.view',
+                'book.viewAny',
+                'book.view',
+                'book.enroll',
+                'course_review.create',
+                'course_review.view',
+                'book_review.create',
+                'book_review.view',
+            ])->pluck('id');
+
+        $this->createRole(RoleName::STUDENT, $permission);
     }
 }
