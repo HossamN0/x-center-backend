@@ -32,8 +32,6 @@ class PermissionSeeder extends Seeder
 
         $resources = [
             'user',
-            'role',
-            'permission',
             'course',
             'course_chapter',
             'course_enrollment',
