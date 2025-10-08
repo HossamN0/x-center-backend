@@ -15,7 +15,20 @@ class CourseCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return [
-            'data' => $this->collection,
+            'data' => $this->collection->map(function ($course) {
+                return [
+                    'id' => $course->id,
+                    'status' => $course->status,
+                    'title' => $course->title,
+                    'subtitle' => $course->subtitle,
+                    'image' => env('CLOUDFLARE_R2_URL') . '/' . $course->image,
+                    'description' => $course->description,
+                    'price' => $course->price,
+                    'created_at' => $course->created_at,
+                    'updated_at' => $course->updated_at,
+                    'instructor' => $course->instructor
+                ];
+            }),
             'pagination' => [
                 'current_page' => $this->currentPage(),
                 'last_page' => $this->lastPage(),

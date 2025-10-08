@@ -37,11 +37,22 @@ class RoleSeeder extends Seeder
     {
         $permission = Permission::query()
             ->where(function ($query) {
-                $query->where('name', 'like', 'course.%')
-                    ->orWhere('name', 'like', 'course_chapter.%')
-                    ->orWhere('name', 'like', 'course_exam.%')
-                    ->orWhere('name', 'like', 'exam_question.%')
-                    ->orWhere('name', 'like', 'book.%');
+                $query->where(function ($subQuery) {
+                    $subQuery->where('name', 'like', 'course.%')
+                        ->orWhere('name', 'like', 'course_chapter.%')
+                        ->orWhere('name', 'like', 'course_exam.%')
+                        ->orWhere('name', 'like', 'exam_question.%')
+                        ->orWhere('name', 'like', 'book.%');
+                })
+                    ->whereNotIn('name', [
+                        'course.delete',
+                        'course.enroll',
+                        'course_chapter.delete',
+                        'course_exam.delete',
+                        'exam_question.delete',
+                        'book.delete',
+                        'book.enroll',
+                    ]);
             })
             ->orWhere(function ($query) {
                 $query->whereIn('name', [
@@ -49,13 +60,6 @@ class RoleSeeder extends Seeder
                     'book_review.view'
                 ]);
             })
-            ->whereNotIn('name', [
-                'course.delete',
-                'course_chapter.delete',
-                'course_exam.delete',
-                'exam_question.delete',
-                'book.delete'
-            ])
             ->pluck('id');
 
         $this->createRole(RoleName::INSTRUCTOR, $permission);

@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
             'last_name' => 'Admin',
             'email' => 'admin@admin.com',
             'phone' => '+201019244852',
-            'password' => bcrypt('password'),
+            'password' => bcrypt('123456789'),
         ])->roles()->sync(Role::where('name', RoleName::ADMIN->value)->first());
     }
 }

@@ -36,7 +36,9 @@ class CourseController extends Controller
                 $query->select('id', 'first_name', 'last_name', 'email', 'phone');
             }
         ])->paginate($limit);
-
+        if (!$courses->count()) {
+            return response()->json(['message' => 'No courses found'], 404);
+        }
         return new CourseCollection($courses);
     }
 
@@ -79,7 +81,6 @@ class CourseController extends Controller
         }
 
         $validated = $request->validate($rules);
-        // Storage::put('courses', $request->file('image'));
         $validated['image'] = $request->file('image')->store('courses', 'r2');
         if ($user->isInstructor()) {
             $validated['instructor_id'] = $user->id;
@@ -98,7 +99,24 @@ class CourseController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+            $course = Course::with([
+                'instructor' => function ($query) {
+                    $query->select('id', 'first_name', 'last_name', 'email', 'phone');
+                }
+            ])->findOrFail($id);
+
+            $course['image'] = env('CLOUDFLARE_R2_URL') . '/' . $course['image'];
+
+            return response()->json([
+                'message' => 'Course retrieved successfully',
+                'data' => $course
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Course not found'
+            ], 404);
+        }
     }
 
     /**
@@ -114,7 +132,33 @@ class CourseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try {
+
+            $course = Course::findOrFail($id);
+            $rules = [
+                'status' => ['sometimes', Rule::in(['active', 'in_active'])],
+                'price' => 'sometimes|integer',
+                'title' => 'sometimes|string|max:225',
+                'subtitle' => 'sometimes|string|max:225',
+                'description' => 'sometimes|string',
+                'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ];
+            $validated = $request->validate($rules);
+            if ($request->hasFile('image')) {
+                Storage::disk('r2')->delete($course->image);
+                $validated['image'] = $request->file('image')->store('courses', 'r2');
+            }
+            $course->update($validated);
+
+            return response()->json([
+                'message' => 'Course updated successfully',
+                'data' => $course
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 404);
+        }
     }
 
     /**
@@ -122,6 +166,17 @@ class CourseController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try {
+            $course = Course::findOrFail($id);
+            Storage::disk('r2')->delete($course->image);
+            $course->delete();
+            return response()->json([
+                'message' => 'Course deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Course not found'
+            ], 404);
+        }
     }
 }
