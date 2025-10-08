@@ -6,6 +6,7 @@ use App\Http\Resources\CourseCollection;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -60,6 +61,7 @@ class CourseController extends Controller
             'title' => 'required|string|max:225',
             'subtitle' => 'required|string|max:225',
             'description' => 'required|string',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
 
         if ($user->isAdmin()) {
@@ -77,7 +79,8 @@ class CourseController extends Controller
         }
 
         $validated = $request->validate($rules);
-
+        // Storage::put('courses', $request->file('image'));
+        $validated['image'] = $request->file('image')->store('courses', 'r2');
         if ($user->isInstructor()) {
             $validated['instructor_id'] = $user->id;
         }

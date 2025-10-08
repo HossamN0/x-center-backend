@@ -14,6 +14,7 @@ class Course extends Model
         'subtitle',
         'description',
         'price',
+        'image'
     ];
 
     public function instructor(): BelongsTo

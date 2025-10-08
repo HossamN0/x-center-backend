@@ -14,10 +14,11 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('instructor_id')->constrained('users')->onDelete('restrict');
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->float('price')->default(0);
             $table->string('title');
             $table->string('subtitle');
+            $table->string('image');
             $table->text('description');
+            $table->float('price')->default(0);
             $table->timestamps();
         });
     }
