@@ -4,11 +4,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseChapterController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentsController;
+use App\Http\Controllers\CourseExamController;
 use App\Http\Controllers\CourseReviewController;
-use Aws\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -56,3 +55,6 @@ Route::put('/course/review/{id}', [CourseReviewController::class, 'update'])
     ->middleware('can:course_review.update')->name('course.review.update');
 Route::delete('/course/review/{id}', [CourseReviewController::class, 'destroy'])
     ->middleware('can:course_review.delete')->name('course.review.delete');
+
+// course exam
+Route::post('/course/exam', [CourseExamController::class, 'store']);

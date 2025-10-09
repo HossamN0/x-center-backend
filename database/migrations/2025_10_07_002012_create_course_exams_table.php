@@ -13,7 +13,8 @@ return new class extends Migration {
         Schema::create('course_exams', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chapter_id')->constrained('course_chapters')->onDelete('cascade');
-            $table->float('degree')->default(0);
+            $table->dateTime('start_time');
+            $table->dateTime('end_time');
             $table->enum('status', ['not_started', 'inprogress', 'completed'])->default('not_started');
             $table->timestamps();
         });

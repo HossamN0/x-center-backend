@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('exam_questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('exam_id')->constrained('course_exams')->onDelete('cascade');
-            $table->string('title');
+            $table->string('question');
             $table->string('image')->nullable();
             $table->timestamps();
         });
