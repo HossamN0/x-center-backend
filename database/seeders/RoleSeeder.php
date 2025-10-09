@@ -46,12 +46,10 @@ class RoleSeeder extends Seeder
                 })
                     ->whereNotIn('name', [
                         'course.delete',
-                        'course.enroll',
                         'course_chapter.delete',
                         'course_exam.delete',
                         'exam_question.delete',
                         'book.delete',
-                        'book.enroll',
                     ]);
             })
             ->orWhere(function ($query) {
@@ -71,7 +69,7 @@ class RoleSeeder extends Seeder
             ->whereIn('name', [
                 'course.viewAny',
                 'course.view',
-                'course.enroll',
+                'course_enrollment.create',
                 'course_chapter.view',
                 'course_exam.view',
                 'exam_question.view',
@@ -84,6 +82,7 @@ class RoleSeeder extends Seeder
                 'course_review.view',
                 'book_review.create',
                 'book_review.view',
+                'book_enrollment.create',
             ])->pluck('id');
 
         $this->createRole(RoleName::STUDENT, $permission);

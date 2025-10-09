@@ -20,14 +20,6 @@ class PermissionSeeder extends Seeder
             'create',
             'update',
             'delete',
-
-            // Special actions
-            'enroll',        // For courses/books
-            'complete',      // Mark as completed
-            'publish',       // Publish content
-            'approve',       // Approve reviews/content
-            'export',        // Export data
-            'manage',        // Full management
         ];
 
         $resources = [

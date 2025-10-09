@@ -13,12 +13,12 @@ return new class extends Migration {
         Schema::create('courses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('instructor_id')->constrained('users')->onDelete('restrict');
-            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->string('title');
             $table->string('subtitle');
+            $table->float('price')->default(0);
             $table->string('image');
             $table->text('description');
-            $table->float('price')->default(0);
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });
     }

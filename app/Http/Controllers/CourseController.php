@@ -66,7 +66,7 @@ class CourseController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
 
-        if ($user->isAdmin()) {
+        if (!$user->isInstructor()) {
             $rules['instructor_id'] = [
                 'required',
                 'integer',
@@ -84,6 +84,8 @@ class CourseController extends Controller
         $validated['image'] = $request->file('image')->store('courses', 'r2');
         if ($user->isInstructor()) {
             $validated['instructor_id'] = $user->id;
+        } else {
+            $validated['instructor_id'] = $request->instructor_id;
         }
 
         $course = Course::create($validated);
@@ -114,7 +116,7 @@ class CourseController extends Controller
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Course not found'
+                'message' => $e->getMessage()
             ], 404);
         }
     }
@@ -122,9 +124,28 @@ class CourseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function editImage(Request $request, string $id)
     {
-        //
+        try {
+            $course = Course::findOrFail($id);
+            $validated = $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ]);
+            if ($request->hasFile('image')) {
+                Storage::disk('r2')->delete($course->image);
+                $validated['image'] = $request->file('image')->store('courses', 'r2');
+            }
+            $course->update($validated);
+
+            return response()->json([
+                'message' => 'Image updated successfully',
+                'data' => $course
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 404);
+        }
     }
 
     /**
@@ -133,7 +154,6 @@ class CourseController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-
             $course = Course::findOrFail($id);
             $rules = [
                 'status' => ['sometimes', Rule::in(['active', 'in_active'])],
@@ -141,13 +161,8 @@ class CourseController extends Controller
                 'title' => 'sometimes|string|max:225',
                 'subtitle' => 'sometimes|string|max:225',
                 'description' => 'sometimes|string',
-                'image' => 'sometimes|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ];
             $validated = $request->validate($rules);
-            if ($request->hasFile('image')) {
-                Storage::disk('r2')->delete($course->image);
-                $validated['image'] = $request->file('image')->store('courses', 'r2');
-            }
             $course->update($validated);
 
             return response()->json([
@@ -175,7 +190,7 @@ class CourseController extends Controller
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Course not found'
+                'message' => $e->getMessage()
             ], 404);
         }
     }
