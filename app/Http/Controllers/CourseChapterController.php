@@ -2,20 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\CourseAuthorization;
 use App\Http\Resources\CourseChapterCollection;
-use App\Models\Course;
 use App\Models\CourseChapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CourseChapterController extends Controller
 {
+
+    use CourseAuthorization;
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request, string $id)
     {
+        $user = JWTAuth::parseToken()->authenticate();
+
+        $authorization = $this->authorizeCourseAccess($id, $user);
+        if ($authorization !== true) {
+            return response()->json([
+                'message' => 'You are not authorized to access this course'
+            ], 403);
+        }
+
         $limit = $request->get('limit', 10);
         $search = $request->get('search');
         $status = $request->get('status');
@@ -71,6 +83,15 @@ class CourseChapterController extends Controller
      */
     public function show(string $id)
     {
+        $user = JWTAuth::parseToken()->authenticate();
+
+        $authorization = $this->authorizeChapterAccess($id, $user);
+        if ($authorization !== true) {
+            return response()->json([
+                'message' => 'You are not authorized to access this chapter'
+            ], 403);
+        }
+
         $chapter = CourseChapter::findOrFail($id);
         return response()->json([
             'message' => 'Chapter retrieved successfully',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\CourseAuthorization;
 use App\Http\Resources\CourseCollection;
 use App\Models\Course;
 use App\Models\User;
@@ -12,6 +13,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CourseController extends Controller
 {
+    use CourseAuthorization;
     /**
      * Display a listing of the resource.
      */
@@ -34,6 +36,14 @@ class CourseController extends Controller
         $courses = Course::with([
             'instructor' => function ($query) {
                 $query->select('id', 'first_name', 'last_name', 'email', 'phone');
+            },
+            'reviews' => function ($query) {
+                $query->select('id', 'course_id', 'student_id', 'review_num', 'description')
+                    ->with([
+                        'student' => function ($query) {
+                            $query->select('id', 'first_name', 'last_name', 'email', 'phone');
+                        }
+                    ]);
             }
         ])->paginate($limit);
         if (!$courses->count()) {
@@ -101,13 +111,36 @@ class CourseController extends Controller
      */
     public function show(string $id)
     {
+        $user = null;
         try {
+            if ($token = JWTAuth::getToken()) {
+                $user = JWTAuth::authenticate($token);
+            }
+
+            $authorization = $this->authorizeCourseAccess($id, $user);
             $course = Course::with([
                 'instructor' => function ($query) {
                     $query->select('id', 'first_name', 'last_name', 'email', 'phone');
+                },
+                'reviews' => function ($query) {
+                    $query->select('id', 'course_id', 'student_id', 'review_num', 'description')
+                        ->with([
+                            'student' => function ($query) {
+                                $query->select('id', 'first_name', 'last_name', 'email', 'phone');
+                            }
+                        ]);
                 }
-            ])->findOrFail($id);
+            ]);
 
+            if ($authorization) {
+                $course->with([
+                    'chapters' => function ($query) {
+                        $query->select('id', 'course_id', 'title', 'content');
+                    }
+                ]);
+            }
+
+            $course = $course->findOrFail($id);
             $course['image'] = env('CLOUDFLARE_R2_URL') . '/' . $course['image'];
 
             return response()->json([

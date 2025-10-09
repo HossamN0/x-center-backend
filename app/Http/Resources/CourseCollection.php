@@ -26,6 +26,7 @@ class CourseCollection extends ResourceCollection
                     'price' => $course->price,
                     'created_at' => $course->created_at,
                     'updated_at' => $course->updated_at,
+                    'average_rating' => $course->reviews->avg('review_num'),
                     'instructor' => $course->instructor
                 ];
             }),

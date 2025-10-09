@@ -55,9 +55,13 @@ class AuthController extends Controller
             'token_type' => 'refresh',
         ])->fromUser(JWTAuth::user());
 
+        $user = JWTAuth::user()->load('roles:id,name');
+        $user->roles->makeHidden('pivot');
+        // dd($userwithRole);
+
         return response()->json([
             'message' => 'Login successful',
-            'user' => JWTAuth::user(),
+            'user' => $user,
             'access_token' => $token,
             'refresh_token' => $refresh_token,
         ], 200);

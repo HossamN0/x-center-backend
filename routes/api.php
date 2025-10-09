@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CourseChapterController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentsController;
+use App\Http\Controllers\CourseReviewController;
+use Aws\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -29,7 +31,7 @@ Route::put('/course/{id}', [CourseController::class, 'update'])
 Route::post('/course_image/{id}', [CourseController::class, 'editImage'])
     ->middleware('can:course.update')->name('course.update');
 
-// course chapters  (without enrollment)
+// course chapters
 Route::post('/course/chapter', [CourseChapterController::class, 'store'])
     ->middleware('can:course_chapter.create')->name('course.chapter.create');
 Route::put('/course/chapter/{id}', [CourseChapterController::class, 'update'])
@@ -37,10 +39,20 @@ Route::put('/course/chapter/{id}', [CourseChapterController::class, 'update'])
 Route::get('/course/{id}/chapter', [CourseChapterController::class, 'index'])
     ->middleware('can:course_chapter.view')->name('course.chapter.view');
 Route::get('/course/chapter/{id}', [CourseChapterController::class, 'show'])
-    ->middleware('can:course_chapter.viewAny')->name('course.chapter.viewAny');
+    ->middleware('can:course_chapter.view')->name('course.chapter.viewAny');
 Route::delete('/course/chapter/{id}', [CourseChapterController::class, 'destroy'])
     ->middleware('can:course_chapter.delete')->name('course.chapter.delete');
 
 // course enroll
 Route::post('/course/enroll', [CourseEnrollmentsController::class, 'store'])
     ->middleware('can:course_enrollment.create')->name('course.enroll.create');
+Route::put('/course/enroll/{id}', [CourseEnrollmentsController::class, 'update'])
+    ->middleware('can:course_enrollment.update')->name('course.enroll.update');
+
+//course review
+Route::post('/course/review', [CourseReviewController::class, 'store'])
+    ->middleware('can:course_review.create')->name('course.review.create');
+Route::put('/course/review/{id}', [CourseReviewController::class, 'update'])
+    ->middleware('can:course_review.update')->name('course.review.update');
+Route::delete('/course/review/{id}', [CourseReviewController::class, 'destroy'])
+    ->middleware('can:course_review.delete')->name('course.review.delete');

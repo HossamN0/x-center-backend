@@ -18,6 +18,8 @@ return new class extends Migration
             $table->float('review_num')->default(0);
             $table->text('description');
             $table->timestamps();
+
+            $table->check('review_num >= 0 AND review_num <= 5');
         });
     }
 

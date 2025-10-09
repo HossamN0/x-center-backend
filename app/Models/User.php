@@ -85,6 +85,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->roles()->where('name', $role->value)->exists();
     }
+    
 
     public function permissions(): array
     {

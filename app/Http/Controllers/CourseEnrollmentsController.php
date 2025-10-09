@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CourseEnrollment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CourseEnrollmentsController extends Controller
@@ -83,7 +84,17 @@ class CourseEnrollmentsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $courseEnrollment = CourseEnrollment::find($id);
+        $rules = [
+            'progress' => 'sometimes|numeric|min:0|max:100',
+            'status' => ['sometimes', Rule::in(['pending', 'accepted', 'rejected'])],
+        ];
+        $validated = $request->validate($rules);
+        $courseEnrollment->update($validated);
+        return response()->json([
+            'message' => 'Enrollment updated successfully',
+            'data' => $courseEnrollment
+        ], 200);
     }
 
     /**
