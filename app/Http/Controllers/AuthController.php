@@ -2,48 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RefreshRequest;
+use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required',
-            'password' => 'required',
-            'role' => ['sometimes', Rule::in(['admin', 'instructor', 'student'])],
-        ]);
+        $validated = $request->validated();
 
         $role = $validated['role'] ?? 'student';
-
-        User::create([
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'status' => $role === 'instructor' ? 'inactive' : 'active',
-        ])->roles()->sync(Role::where('name', $role)->first());
+        unset($validated['role']);
+        $validated['status'] = $role === 'instructor' ? 'inactive' : 'active';
+        User::create($validated)
+            ->roles()->sync(Role::where('name', $role)->first());
 
         return response()->json([
             'message' => 'User registered successfully'
         ], 201);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->validated();
 
         if (!$token = JWTAuth::attempt($credentials)) {
             return response()->json([
@@ -67,11 +54,9 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function refresh(Request $request)
+    public function refresh(RefreshRequest $request)
     {
-        $request->validate([
-            'refresh_token' => 'required|string',
-        ]);
+        $request->validated();
         try {
             $refresh_token = $request->refresh_token;
             $payload = JWTAuth::setToken($refresh_token)->getPayload();

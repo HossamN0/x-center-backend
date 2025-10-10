@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CourseEnrollments\StoreCourseEnrollRequest;
+use App\Http\Requests\CourseEnrollments\UpdateCourseEnrollRequest;
 use App\Models\CourseEnrollment;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -29,15 +31,13 @@ class CourseEnrollmentsController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreCourseEnrollRequest $request)
     {
         $user = JWTAuth::parseToken()->authenticate();
-        $rules = [
-            'course_id' => 'required|exists:courses,id',
-        ];
+        $validated = $request->validated();
 
         if (!$user->isStudent()) {
-            $rules['student_id'] = [
+            $validated['student_id'] = [
                 'required',
                 'exists:users,id',
                 function ($attribute, $value, $fail) {
@@ -49,7 +49,6 @@ class CourseEnrollmentsController extends Controller
             ];
         }
 
-        $validated = $request->validate($rules);
         if ($user && $user->isStudent()) {
             $validated['student_id'] = $user->id;
         } else {
@@ -82,14 +81,10 @@ class CourseEnrollmentsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateCourseEnrollRequest $request, string $id)
     {
         $courseEnrollment = CourseEnrollment::find($id);
-        $rules = [
-            'progress' => 'sometimes|numeric|min:0|max:100',
-            'status' => ['sometimes', Rule::in(['pending', 'accepted', 'rejected'])],
-        ];
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
         $courseEnrollment->update($validated);
         return response()->json([
             'message' => 'Enrollment updated successfully',

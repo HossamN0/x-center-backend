@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\CourseAuthorization;
+use App\Http\Requests\CourseReviews\StoreCourseReviewRequest;
+use App\Http\Requests\CourseReviews\UpdateCourseReviewRequest;
 use App\Models\Course;
 use App\Models\CourseReview;
 use Illuminate\Http\Request;
@@ -30,7 +32,7 @@ class CourseReviewController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreCourseReviewRequest $request)
     {
         $user = JWTAuth::parseToken()->authenticate();
         if (!Course::find($request->course_id)) {
@@ -47,12 +49,7 @@ class CourseReviewController extends Controller
         if (!$user->isStudent()) {
             return response()->json(['message' => 'You are not a student'], 403);
         }
-        $rules = [
-            'course_id' => 'required|exists:courses,id',
-            'description' => 'required|string',
-            'review_num' => 'required|integer',
-        ];
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
         $validated['student_id'] = $user->id;
 
         $review = CourseReview::create($validated);
@@ -82,14 +79,10 @@ class CourseReviewController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateCourseReviewRequest $request, string $id)
     {
         $review = CourseReview::findOrFail($id);
-        $rules = [
-            'description' => 'required|string',
-            'review_num' => 'required|integer',
-        ];
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
         $review->update($validated);
         return response()->json([
             'message' => 'Review updated successfully',

@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\CourseAuthorization;
+use App\Http\Requests\CourseChapters\StoreChapterRequest;
+use App\Http\Requests\CourseChapters\UpdateChapterRequest;
 use App\Http\Resources\CourseChapterCollection;
 use App\Models\CourseChapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CourseChapterController extends Controller
@@ -58,14 +59,9 @@ class CourseChapterController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreChapterRequest $request)
     {
-        $validated = $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'status' => ['sometimes', Rule::in(['opened', 'closed'])],
-            'title' => 'required|string|max:225',
-            'content' => 'required|file|mimes:pdf,doc,docx,txt,jpg,jpeg,png|max:2048',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('content')) {
             $validated['content'] = $request->file('content')->store('chapters', 'r2');
@@ -110,16 +106,11 @@ class CourseChapterController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateChapterRequest $request, string $id)
     {
         try {
-            $rules = [
-                'title' => 'sometimes|string|max:225',
-                'status' => ['sometimes', Rule::in(['opened', 'closed'])],
-            ];
-
             $courseChapter = CourseChapter::findOrFail($id);
-            $validated = $request->validate($rules);
+            $validated = $request->validated();
             $courseChapter->update($validated);
 
             return response()->json([

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\CourseAuthorization;
+use App\Http\Requests\Course\StoreCourseRequest;
+use App\Http\Requests\Course\UpdateCourseImageRequest;
+use App\Http\Requests\Course\UpdateCourseRequest;
 use App\Http\Resources\CourseCollection;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CourseController extends Controller
@@ -63,21 +65,13 @@ class CourseController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreCourseRequest $request)
     {
         $user = JWTAuth::parseToken()->authenticate();
-
-        $rules = [
-            'status' => ['sometimes', Rule::in(['active', 'in_active'])],
-            'price' => 'required|integer',
-            'title' => 'required|string|max:225',
-            'subtitle' => 'required|string|max:225',
-            'description' => 'required|string',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ];
+        $validated = $request->validated();
 
         if (!$user->isInstructor()) {
-            $rules['instructor_id'] = [
+            $validated['instructor_id'] = [
                 'required',
                 'integer',
                 'exists:users,id',
@@ -90,7 +84,6 @@ class CourseController extends Controller
             ];
         }
 
-        $validated = $request->validate($rules);
         $validated['image'] = $request->file('image')->store('courses', 'r2');
         if ($user->isInstructor()) {
             $validated['instructor_id'] = $user->id;
@@ -157,13 +150,11 @@ class CourseController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function editImage(Request $request, string $id)
+    public function editImage(UpdateCourseImageRequest $request, string $id)
     {
         try {
             $course = Course::findOrFail($id);
-            $validated = $request->validate([
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            ]);
+            $validated = $request->validated();
             if ($request->hasFile('image')) {
                 Storage::disk('r2')->delete($course->image);
                 $validated['image'] = $request->file('image')->store('courses', 'r2');
@@ -184,18 +175,11 @@ class CourseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateCourseRequest $request, string $id)
     {
         try {
             $course = Course::findOrFail($id);
-            $rules = [
-                'status' => ['sometimes', Rule::in(['active', 'in_active'])],
-                'price' => 'sometimes|integer',
-                'title' => 'sometimes|string|max:225',
-                'subtitle' => 'sometimes|string|max:225',
-                'description' => 'sometimes|string',
-            ];
-            $validated = $request->validate($rules);
+            $validated = $request->validated();
             $course->update($validated);
 
             return response()->json([
