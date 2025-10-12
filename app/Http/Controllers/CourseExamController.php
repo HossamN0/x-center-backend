@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CourseExam\CreateCourseExamRequest;
 use App\Models\CourseExam;
 use App\Models\ExamQuestion;
 use App\Models\QuestionAnswer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CourseExamController extends Controller
 {
@@ -30,19 +32,9 @@ class CourseExamController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(CreateCourseExamRequest $request)
     {
-        $validated = $request->validate([
-            'chapter_id' => 'required|exists:course_chapters,id',
-            'start_time' => 'required|date|date_format:Y-m-d H:i:s|after_or_equal:now',
-            'end_time' => 'required|date|date_format:Y-m-d H:i:s|after:start_time',
-            'questions' => 'required|array|min:1',
-            'questions.*.question' => 'required|string|max:255',
-            'questions.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'questions.*.answers' => 'required|array|min:1',
-            'questions.*.answers.*.answer' => 'required|string|max:255',
-            'questions.*.answers.*.is_correct' => ['required', Rule::in(['0', '1'])],
-        ]);
+        $validated = $request->validated();
 
         DB::beginTransaction();
 
@@ -89,9 +81,30 @@ class CourseExamController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(CourseExam $courseExam)
+    public function show(string $id)
     {
-        //
+        $user = JWTAuth::parseToken()->authenticate();
+        $exam = CourseExam::with('chapter.course.enrollments')->findOrFail($id);
+        $course = $exam->chapter->course;
+        $isInstructor = $user->isInstructor() && $course->instructor_id === $user->id;
+        $isAdmin = $user->isAdmin();
+        $isEnrolled = $course->enrollments->contains('student_id', $user->id);
+
+        if (!($isInstructor || $isAdmin || $isEnrolled)) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $exam->load([
+            'questions' => function ($q) use ($isInstructor, $isAdmin) {
+                if ($isInstructor || $isAdmin) {
+                    $q->with('answers');
+                }
+            }
+        ]);
+
+        return response()->json([
+            'questions' => $exam->questions
+        ], 200);
     }
 
     /**

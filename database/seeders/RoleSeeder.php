@@ -72,6 +72,7 @@ class RoleSeeder extends Seeder
                 'course_enrollment.create',
                 'course_chapter.view',
                 'course_exam.view',
+                'course_exam.submit',
                 'exam_question.view',
                 'exam_answer.create',
                 'exam_answer.view',
