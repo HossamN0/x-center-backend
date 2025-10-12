@@ -23,7 +23,7 @@ class UpdateCourseReviewRequest extends FormRequest
     {
         return [
             'description' => 'required|string',
-            'review_num' => 'required|integer',
+            'review_num' => 'required|integer|min:0|max:5',
         ];
     }
 }

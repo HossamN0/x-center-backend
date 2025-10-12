@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CourseExam\CreateCourseExamRequest;
+use App\Http\Requests\CourseExam\SubmitAnswersRequest;
 use App\Models\CourseExam;
 use App\Models\ExamQuestion;
 use App\Models\QuestionAnswer;
@@ -110,6 +111,47 @@ class CourseExamController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+
+    public function Submit(SubmitAnswersRequest $request)
+    {
+        $validated = $request->validated();
+        $user = JWTAuth::parseToken()->authenticate();
+        $exam = CourseExam::with(['questions.answers', 'chapter.course.enrollments'])->findOrFail($validated['exam_id']);
+        $submittedAnswers = collect($validated['answers']);
+        $course = $exam->chapter->course;
+        $isEnrolled = $course->enrollments->contains('student_id', $user->id);
+
+        if (!$isEnrolled) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $examQuestionIds = $exam->questions->pluck('id');
+        $submittedQuestionIds = $submittedAnswers->pluck('question_id');
+
+        if (!($examQuestionIds->count() === $submittedAnswers->count())) {
+            return response()->json(['message' => 'All questions must be answered'], 400);
+        }
+
+        $isInvalid = $submittedQuestionIds->diff($examQuestionIds);
+
+        if ($isInvalid->isNotEmpty()) {
+            return response()->json(['message' => 'Invalid question IDs submitted'], 400);
+        }
+
+        foreach ($submittedAnswers as $submitted) {
+            $question = $exam->questions->firstWhere('id', $submitted['question_id']);
+            $validAnswerIds = $question->answers->pluck('id');
+
+            if (!$validAnswerIds->contains($submitted['answer_id'])) {
+                return response()->json(['message' => 'Invalid answer ID for question ID ' . $submitted['question_id']], 400);
+            }
+        }
+
+        return response()->json([
+            'questions' => $exam
+        ], 200);
+    }
+
     public function edit(CourseExam $courseExam)
     {
         //

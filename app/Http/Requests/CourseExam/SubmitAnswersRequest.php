@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\CourseReviews;
+namespace App\Http\Requests\CourseExam;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCourseReviewRequest extends FormRequest
+class SubmitAnswersRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,9 +22,10 @@ class StoreCourseReviewRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_id' => 'required|exists:courses,id',
-            'description' => 'required|string',
-            'review_num' => 'required|integer|min:0|max:5',
+            'exam_id' => ['required', 'exists:course_exams,id'],
+            'answers' => ['required', 'array'],
+            'answers.*.question_id' => ['required', 'exists:exam_questions,id'],
+            'answers.*.answer_id' => ['required', 'exists:question_answers,id'],
         ];
     }
 }

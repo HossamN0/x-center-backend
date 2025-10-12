@@ -59,3 +59,4 @@ Route::delete('/course/review/{id}', [CourseReviewController::class, 'destroy'])
 // course exam
 Route::post('/course/exam', [CourseExamController::class, 'store']);
 Route::get('/course/exam/{id}', [CourseExamController::class, 'show']);
+Route::post('/exam/submit', [CourseExamController::class, 'Submit']);

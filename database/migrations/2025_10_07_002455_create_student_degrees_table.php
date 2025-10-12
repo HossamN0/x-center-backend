@@ -10,14 +10,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('course_reviews', function (Blueprint $table) {
+        Schema::create('student_degrees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
             $table->foreignId('student_id')->constrained('users')->onDelete('cascade');
-            $table->float('review_num')->default(0);
-            $table->text('description');
+            $table->foreignId('exam_id')->constrained('course_exams')->onDelete('cascade');
+            $table->float('degree');
             $table->timestamps();
-
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('course_reviews');
+        Schema::dropIfExists('student_degrees');
     }
 };
