@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Enums\RoleName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -66,6 +67,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsToMany(Course::class);
     }
 
+    public function studentDegrees(): HasMany
+    {
+        return $this->hasMany(StudentDegree::class, 'student_id');
+    }
+
     public function isAdmin(): bool
     {
         return $this->hasRole(RoleName::ADMIN);
@@ -85,7 +91,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->roles()->where('name', $role->value)->exists();
     }
-    
+
 
     public function permissions(): array
     {

@@ -59,6 +59,7 @@ class AuthController extends Controller
         $request->validated();
         try {
             $refresh_token = $request->refresh_token;
+            $access_token = $request->access_token;
             $payload = JWTAuth::setToken($refresh_token)->getPayload();
 
             if ($payload->get('token_type') !== 'refresh') {
@@ -69,6 +70,7 @@ class AuthController extends Controller
 
             $user = JWTAuth::setToken($refresh_token)->toUser();
             JWTAuth::invalidate($refresh_token);
+            JWTAuth::invalidate($access_token);
             $access_token = JWTAuth::fromUser($user);
             $refresh_token = JWTAuth::claims([
                 'token_type' => 'refresh',

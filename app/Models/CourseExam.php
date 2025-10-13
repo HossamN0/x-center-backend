@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CourseExam extends Model
 {
@@ -21,6 +22,11 @@ class CourseExam extends Model
 
     public function questions(): HasMany
     {
-        return $this->hasMany(ExamQuestion::class,'exam_id');
+        return $this->hasMany(ExamQuestion::class, 'exam_id');
+    }
+
+    public function studentDegree(): HasOne
+    {
+        return $this->hasOne(StudentDegree::class, 'exam_id');
     }
 }

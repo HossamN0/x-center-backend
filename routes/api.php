@@ -57,6 +57,11 @@ Route::delete('/course/review/{id}', [CourseReviewController::class, 'destroy'])
     ->middleware('can:course_review.delete')->name('course.review.delete');
 
 // course exam
-Route::post('/course/exam', [CourseExamController::class, 'store']);
-Route::get('/course/exam/{id}', [CourseExamController::class, 'show']);
-Route::post('/exam/submit', [CourseExamController::class, 'Submit']);
+Route::post('/course/exam', [CourseExamController::class, 'store'])
+    ->middleware('can:course_exam.create')->name('course.exam.create');
+Route::get('/course/exam/{id}', [CourseExamController::class, 'show'])
+    ->middleware('can:course_exam.view')->name('course.exam.viewAny');
+Route::delete('/course/exam/{id}', [CourseExamController::class, 'destroy'])
+    ->middleware('can:course_exam.delete')->name('course.exam.delete');
+Route::post('/exam/submit', [CourseExamController::class, 'Submit'])
+    ->middleware('can:course_exam.submit')->name('exam.submit');

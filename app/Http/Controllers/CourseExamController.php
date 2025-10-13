@@ -7,6 +7,7 @@ use App\Http\Requests\CourseExam\SubmitAnswersRequest;
 use App\Models\CourseExam;
 use App\Models\ExamQuestion;
 use App\Models\QuestionAnswer;
+use App\Models\StudentDegree;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -138,6 +139,8 @@ class CourseExamController extends Controller
             return response()->json(['message' => 'Invalid question IDs submitted'], 400);
         }
 
+        $correctCount = 0;
+
         foreach ($submittedAnswers as $submitted) {
             $question = $exam->questions->firstWhere('id', $submitted['question_id']);
             $validAnswerIds = $question->answers->pluck('id');
@@ -145,10 +148,32 @@ class CourseExamController extends Controller
             if (!$validAnswerIds->contains($submitted['answer_id'])) {
                 return response()->json(['message' => 'Invalid answer ID for question ID ' . $submitted['question_id']], 400);
             }
+
+            $correctAnswer = $question->answers->firstWhere('id', $submitted['answer_id']);
+
+            if ($correctAnswer->is_correct) {
+                $correctCount++;
+            }
+        }
+        $totalQuestions = $exam->questions->count();
+        $score = round(($correctCount / $totalQuestions) * 100, 2);
+        $degree = StudentDegree::where('student_id', $user->id)
+            ->where('exam_id', $exam->id)->first();
+        if ($degree) {
+            return response()->json([
+                'message' => 'You have already submitted this exam.',
+                'your_score' => $degree->degree
+            ], 400);
         }
 
+        StudentDegree::create([
+            'student_id' => $user->id,
+            'exam_id' => $exam->id,
+            'degree' => $score,
+        ]);
+
         return response()->json([
-            'questions' => $exam
+            'your_score' => $score
         ], 200);
     }
 
@@ -160,7 +185,7 @@ class CourseExamController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, CourseExam $courseExam)
+    public function update(Request $request, string $id)
     {
         //
     }
@@ -168,8 +193,10 @@ class CourseExamController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(CourseExam $courseExam)
+    public function destroy(string $id)
     {
-        //
+        $exam = CourseExam::findOrFail($id);
+        $exam->delete();
+        return response()->json(['message' => 'Exam deleted successfully'], 200);
     }
 }
