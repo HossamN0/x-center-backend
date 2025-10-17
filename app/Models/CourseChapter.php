@@ -22,6 +22,6 @@ class CourseChapter extends Model
 
     public function exam(): HasOne
     {
-        return $this->hasOne(CourseExam::class);
+        return $this->hasOne(CourseExam::class,'chapter_id');
     }
 }
