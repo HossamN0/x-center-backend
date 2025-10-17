@@ -37,4 +37,9 @@ class Course extends Model
     {
         return $this->hasMany(CourseReview::class);
     }
+
+    public function exam(): HasMany
+    {
+        return $this->hasMany(CourseExam::class, 'chapter_id');
+    }
 }

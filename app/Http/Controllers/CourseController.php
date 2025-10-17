@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use function Laravel\Prompts\select;
 
 class CourseController extends Controller
 {
@@ -25,17 +26,7 @@ class CourseController extends Controller
         $search = $request->get('search');
         $status = $request->get('status');
 
-        $query = Course::query();
-        if ($search) {
-            $query->where('title', 'like', "%{$search}%")
-                ->orWhere('subtitle', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%");
-        }
-
-        if ($status) {
-            $query->where('status', $status);
-        }
-        $courses = Course::with([
+        $query = Course::with([
             'instructor' => function ($query) {
                 $query->select('id', 'first_name', 'last_name', 'email', 'phone');
             },
@@ -47,12 +38,52 @@ class CourseController extends Controller
                         }
                     ]);
             }
-        ])->paginate($limit);
-        if (!$courses->count()) {
-            return response()->json(['message' => 'No courses found'], 404);
+        ]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('subtitle', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
         }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $courses = $query->paginate($limit);
+
+        if ($courses->total() === 0) {
+            return response()->json([
+                'data' => [],
+                'message' => 'No courses found',
+                'pagination' => [
+                    'current_page' => $courses->currentPage(),
+                    'last_page' => $courses->lastPage(),
+                    'total' => $courses->total(),
+                    'per_page' => $courses->perPage(),
+                ]
+            ], 200);
+        }
+
+        if ($courses->isEmpty() && $courses->currentPage() > $courses->lastPage()) {
+            return response()->json([
+                'data' => [],
+                'message' => 'No courses on this page',
+                'pagination' => [
+                    'current_page' => $courses->currentPage(),
+                    'last_page' => $courses->lastPage(),
+                    'total' => $courses->total(),
+                    'per_page' => $courses->perPage(),
+                ]
+            ], 200);
+        }
+
         return new CourseCollection($courses);
     }
+
+
 
     /**
      * Show the form for creating a new resource.
@@ -122,13 +153,26 @@ class CourseController extends Controller
                                 $query->select('id', 'first_name', 'last_name', 'email', 'phone');
                             }
                         ]);
+                },
+                'enrollments' => function ($query) {
+                    $query->select('id', 'course_id', 'student_id', 'status');
                 }
             ]);
 
             if ($authorization) {
                 $course->with([
-                    'chapters' => function ($query) {
-                        $query->select('id', 'course_id', 'title', 'content');
+                    'chapters' => function ($query) use ($user) {
+                        $query->select('id', 'course_id', 'title', 'content')
+                            ->with([
+                                'exam' => function ($q) use ($user) {
+                                    $q->select('id', 'chapter_id', 'status')
+                                        ->withExists([
+                                            'studentDegree as degree' => function ($degreeQuery) use ($user) {
+                                                $degreeQuery->where('student_id', $user->id);
+                                            }
+                                        ]);
+                                }
+                            ]);
                     }
                 ]);
             }
@@ -136,6 +180,20 @@ class CourseController extends Controller
             $course = $course->findOrFail($id);
             $course['image'] = env('CLOUDFLARE_R2_URL') . '/' . $course['image'];
 
+            if ($authorization && $course->chapters) {
+                $course->chapters->transform(function ($chapter) {
+                    if ($chapter->content) {
+                        $chapter->content = env('CLOUDFLARE_R2_URL') . '/' . $chapter->content;
+                    }
+                    return $chapter;
+                });
+            }
+
+            if ($user) {
+                $enrollments = $course->enrollments->where('student_id', $user->id)->first();
+                $course['enroll'] = $enrollments->status ?? false;
+            }
+            unset($course['enrollments']);
             return response()->json([
                 'message' => 'Course retrieved successfully',
                 'data' => $course
